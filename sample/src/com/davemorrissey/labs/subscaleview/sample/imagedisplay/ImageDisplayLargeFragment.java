@@ -28,6 +28,8 @@ import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 import com.davemorrissey.labs.subscaleview.sample.R.id;
 import com.davemorrissey.labs.subscaleview.sample.R.layout;
 
+import java.io.InputStream;
+
 public class ImageDisplayLargeFragment extends Fragment {
 
     @Override
@@ -40,7 +42,20 @@ public class ImageDisplayLargeFragment extends Fragment {
             }
         });
         SubsamplingScaleImageView imageView = (SubsamplingScaleImageView)rootView.findViewById(id.imageView);
-        imageView.setImage(ImageSource.asset("card.png"));
+        try {
+            InputStream is= this.getActivity().getAssets().open("card.png");
+            byte[] fileBytes=new byte[is.available()];
+            is.read(fileBytes);
+            is.close();
+
+            imageView.setImage(ImageSource.rawData(fileBytes));
+        }
+        catch (java.lang.Exception ex) {
+
+        }
+
+
+       // imageView.setImage(ImageSource.asset("card.png"));
         return rootView;
     }
 

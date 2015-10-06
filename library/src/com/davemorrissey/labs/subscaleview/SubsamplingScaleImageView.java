@@ -139,6 +139,9 @@ public class SubsamplingScaleImageView extends View {
     // Uri of full size image
     private Uri uri;
 
+    // Raw data of full size image
+    private byte[] rawData;
+
     // Sample size used to display the whole image when fully zoomed out
     private int fullImageSampleSize;
 
@@ -396,7 +399,7 @@ public class SubsamplingScaleImageView extends View {
                 if (uri == null && previewSource.getResource() != null) {
                     uri = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + getContext().getPackageName() + "/" + previewSource.getResource());
                 }
-                BitmapLoadTask task = new BitmapLoadTask(this, getContext(), bitmapDecoderFactory, uri, true);
+                BitmapLoadTask task = new BitmapLoadTask(this, getContext(), bitmapDecoderFactory, uri, previewSource.getRawData(), true);
                 execute(task);
             }
         }
@@ -408,16 +411,17 @@ public class SubsamplingScaleImageView extends View {
         } else {
             sRegion = imageSource.getSRegion();
             uri = imageSource.getUri();
+            rawData = imageSource.getRawData();
             if (uri == null && imageSource.getResource() != null) {
                 uri = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + getContext().getPackageName() + "/" + imageSource.getResource());
             }
             if (imageSource.getTile() || sRegion != null) {
                 // Load the bitmap using tile decoding.
-                TilesInitTask task = new TilesInitTask(this, getContext(), regionDecoderFactory, uri);
+                TilesInitTask task = new TilesInitTask(this, getContext(), regionDecoderFactory, uri, rawData);
                 execute(task);
             } else {
                 // Load the bitmap as a single image.
-                BitmapLoadTask task = new BitmapLoadTask(this, getContext(), bitmapDecoderFactory, uri, false);
+                BitmapLoadTask task = new BitmapLoadTask(this, getContext(), bitmapDecoderFactory, uri, rawData, false);
                 execute(task);
             }
         }
@@ -1108,7 +1112,7 @@ public class SubsamplingScaleImageView extends View {
             // Use BitmapDecoder for better image support.
             decoder.recycle();
             decoder = null;
-            BitmapLoadTask task = new BitmapLoadTask(this, getContext(), bitmapDecoderFactory, uri, false);
+            BitmapLoadTask task = new BitmapLoadTask(this, getContext(), bitmapDecoderFactory, uri, rawData, false);
             execute(task);
 
         } else {
@@ -1378,26 +1382,28 @@ public class SubsamplingScaleImageView extends View {
         private final WeakReference<Context> contextRef;
         private final WeakReference<DecoderFactory<? extends ImageRegionDecoder>> decoderFactoryRef;
         private final Uri source;
+        private final byte[] rawData;
         private ImageRegionDecoder decoder;
         private Exception exception;
 
-        public TilesInitTask(SubsamplingScaleImageView view, Context context, DecoderFactory<? extends ImageRegionDecoder> decoderFactory, Uri source) {
+        public TilesInitTask(SubsamplingScaleImageView view, Context context, DecoderFactory<? extends ImageRegionDecoder> decoderFactory, Uri source, byte[] rawData) {
             this.viewRef = new WeakReference<SubsamplingScaleImageView>(view);
             this.contextRef = new WeakReference<Context>(context);
             this.decoderFactoryRef = new WeakReference<DecoderFactory<? extends ImageRegionDecoder>>(decoderFactory);
             this.source = source;
+            this.rawData = rawData;
         }
 
         @Override
         protected int[] doInBackground(Void... params) {
             try {
-                String sourceUri = source.toString();
+                String sourceUri = source != null ? source.toString() : null;
                 Context context = contextRef.get();
                 DecoderFactory<? extends ImageRegionDecoder> decoderFactory = decoderFactoryRef.get();
                 SubsamplingScaleImageView view = viewRef.get();
                 if (context != null && decoderFactory != null && view != null) {
                     decoder = decoderFactory.make();
-                    Point dimensions = decoder.init(context, source);
+                    Point dimensions = decoder.init(context, source, rawData);
                     int sWidth = dimensions.x;
                     int sHeight = dimensions.y;
                     int exifOrientation = view.getExifOrientation(sourceUri);
@@ -1535,16 +1541,18 @@ public class SubsamplingScaleImageView extends View {
         private final WeakReference<Context> contextRef;
         private final WeakReference<DecoderFactory<? extends ImageDecoder>> decoderFactoryRef;
         private final Uri source;
+        private final byte[] rawData;
         private final boolean preview;
         private Bitmap bitmap;
         private Exception exception;
 
-        public BitmapLoadTask(SubsamplingScaleImageView view, Context context, DecoderFactory<? extends ImageDecoder> decoderFactory, Uri source, boolean preview) {
+        public BitmapLoadTask(SubsamplingScaleImageView view, Context context, DecoderFactory<? extends ImageDecoder> decoderFactory, Uri source, byte[] rawData, boolean preview) {
             this.viewRef = new WeakReference<SubsamplingScaleImageView>(view);
             this.contextRef = new WeakReference<Context>(context);
             this.decoderFactoryRef = new WeakReference<DecoderFactory<? extends ImageDecoder>>(decoderFactory);
             this.source = source;
             this.preview = preview;
+            this.rawData = rawData;
         }
 
         @Override
@@ -1555,7 +1563,7 @@ public class SubsamplingScaleImageView extends View {
                 DecoderFactory<? extends ImageDecoder> decoderFactory = decoderFactoryRef.get();
                 SubsamplingScaleImageView subsamplingScaleImageView = viewRef.get();
                 if (context != null && decoderFactory != null && subsamplingScaleImageView != null) {
-                    bitmap = decoderFactory.make().decode(context, source);
+                    bitmap = decoderFactory.make().decode(context, source, rawData);
                     return subsamplingScaleImageView.getExifOrientation(sourceUri);
                 }
             } catch (Exception e) {
@@ -1635,7 +1643,10 @@ public class SubsamplingScaleImageView extends View {
      */
     private int getExifOrientation(String sourceUri) {
         int exifOrientation = ORIENTATION_0;
-        if (sourceUri.startsWith(ContentResolver.SCHEME_CONTENT)) {
+        if( sourceUri == null ) {
+
+        }
+        else if (sourceUri.startsWith(ContentResolver.SCHEME_CONTENT)) {
             try {
                 final String[] columns = { MediaStore.Images.Media.ORIENTATION };
                 final Cursor cursor = getContext().getContentResolver().query(Uri.parse(sourceUri), columns, null, null, null);

@@ -19,7 +19,7 @@ import rapid.decoder.BitmapDecoder;
 public class RapidImageDecoder implements ImageDecoder {
 
     @Override
-    public Bitmap decode(Context context, Uri uri) throws Exception {
+    public Bitmap decode(Context context, Uri uri, byte[] rawData) throws Exception {
         return BitmapDecoder.from(context, uri).useBuiltInDecoder(true).config(Bitmap.Config.RGB_565).decode();
     }
 

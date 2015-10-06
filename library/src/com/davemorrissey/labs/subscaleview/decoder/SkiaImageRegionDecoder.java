@@ -10,6 +10,7 @@ import android.graphics.Bitmap.Config;
 import android.net.Uri;
 import android.text.TextUtils;
 
+import java.io.ByteArrayInputStream;
 import java.util.List;
 
 /**
@@ -28,9 +29,12 @@ public class SkiaImageRegionDecoder implements ImageRegionDecoder {
     private static final String RESOURCE_PREFIX = ContentResolver.SCHEME_ANDROID_RESOURCE + "://";
 
     @Override
-    public Point init(Context context, Uri uri) throws Exception {
-        String uriString = uri.toString();
-        if (uriString.startsWith(RESOURCE_PREFIX)) {
+    public Point init(Context context, Uri uri, byte[] rawData) throws Exception {
+        String uriString = uri != null ? uri.toString() : null;
+        if( rawData != null ) {
+            decoder = BitmapRegionDecoder.newInstance(new ByteArrayInputStream(rawData), false);
+        }
+        else if (uriString.startsWith(RESOURCE_PREFIX)) {
             Resources res;
             String packageName = uri.getAuthority();
             if (context.getPackageName().equals(packageName)) {

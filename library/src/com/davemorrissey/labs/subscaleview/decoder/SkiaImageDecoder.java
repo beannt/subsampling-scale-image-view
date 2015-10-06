@@ -9,6 +9,7 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.text.TextUtils;
 
+import java.io.ByteArrayInputStream;
 import java.util.List;
 
 /**
@@ -24,12 +25,15 @@ public class SkiaImageDecoder implements ImageDecoder {
     private static final String RESOURCE_PREFIX = ContentResolver.SCHEME_ANDROID_RESOURCE + "://";
 
     @Override
-    public Bitmap decode(Context context, Uri uri) throws Exception {
+    public Bitmap decode(Context context, Uri uri, byte[] rawData) throws Exception {
         String uriString = uri.toString();
         BitmapFactory.Options options = new BitmapFactory.Options();
         Bitmap bitmap;
         options.inPreferredConfig = Bitmap.Config.RGB_565;
-        if (uriString.startsWith(RESOURCE_PREFIX)) {
+        if( rawData != null ) {
+            bitmap = BitmapFactory.decodeStream(new ByteArrayInputStream(rawData), null, options);
+        }
+        else if (uriString.startsWith(RESOURCE_PREFIX)) {
             Resources res;
             String packageName = uri.getAuthority();
             if (context.getPackageName().equals(packageName)) {

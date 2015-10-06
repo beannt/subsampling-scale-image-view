@@ -23,7 +23,7 @@ public interface ImageRegionDecoder {
      * @return Dimensions of the image.
      * @throws Exception if initialisation fails.
      */
-    Point init(Context context, Uri uri) throws Exception;
+    Point init(Context context, Uri uri, byte[] rawData) throws Exception;
 
     /**
      * Decode a region of the image with the given sample size. This method is called off the UI thread so it can safely

@@ -21,6 +21,7 @@ public final class ImageSource {
     static final String ASSET_SCHEME = "file:///android_asset/";
 
     private final Uri uri;
+    private final byte[] rawData;
     private final Bitmap bitmap;
     private final Integer resource;
     private boolean tile;
@@ -37,6 +38,7 @@ public final class ImageSource {
         this.sWidth = bitmap.getWidth();
         this.sHeight = bitmap.getHeight();
         this.cached = cached;
+        this.rawData = null;
     }
 
     private ImageSource(Uri uri) {
@@ -56,6 +58,15 @@ public final class ImageSource {
         this.uri = uri;
         this.resource = null;
         this.tile = true;
+        this.rawData = null;
+    }
+
+    private ImageSource(byte[] rawData) {
+        this.bitmap = null;
+        this.uri = null;
+        this.resource = null;
+        this.tile = true;
+        this.rawData = rawData;
     }
 
     private ImageSource(int resource) {
@@ -63,6 +74,7 @@ public final class ImageSource {
         this.uri = null;
         this.resource = resource;
         this.tile = true;
+        this.rawData = null;
     }
 
     /**
@@ -101,6 +113,21 @@ public final class ImageSource {
         }
         return new ImageSource(Uri.parse(uri));
     }
+
+    /**
+     * Create an instance from raw data.
+     * @param rawData
+     * @return
+     */
+    public static ImageSource rawData(byte[] rawData)
+    {
+        if (rawData == null) {
+            throw new NullPointerException("Raw data must not be null");
+        }
+
+        return new ImageSource(rawData);
+    }
+
 
     /**
      * Create an instance from a URI.
@@ -199,8 +226,10 @@ public final class ImageSource {
         }
     }
 
-    protected final Uri getUri() {
-        return uri;
+    protected final Uri getUri() { return uri; }
+
+    protected final byte[] getRawData() {
+        return rawData;
     }
 
     protected final Bitmap getBitmap() {

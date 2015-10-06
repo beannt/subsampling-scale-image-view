@@ -23,7 +23,7 @@ public class RapidImageRegionDecoder implements ImageRegionDecoder {
     private BitmapDecoder decoder;
 
     @Override
-    public Point init(Context context, Uri uri) throws Exception {
+    public Point init(Context context, Uri uri, byte[] rawData) throws Exception {
         decoder = BitmapDecoder.from(context, uri);
         decoder.useBuiltInDecoder(true);
         return new Point(decoder.sourceWidth(), decoder.sourceHeight());
