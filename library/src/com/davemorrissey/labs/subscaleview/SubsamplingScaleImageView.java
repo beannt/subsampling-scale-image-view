@@ -1558,7 +1558,7 @@ public class SubsamplingScaleImageView extends View {
         @Override
         protected Integer doInBackground(Void... params) {
             try {
-                String sourceUri = source.toString();
+                String sourceUri = source != null ? source.toString() : null;
                 Context context = contextRef.get();
                 DecoderFactory<? extends ImageDecoder> decoderFactory = decoderFactoryRef.get();
                 SubsamplingScaleImageView subsamplingScaleImageView = viewRef.get();
